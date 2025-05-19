@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rotten Tomatoes Game</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script>
+        let movieTitles = {{ movie_titles | tojson | safe }};
+
+        function updateSuggestions() {
+            const selectedDecade = parseInt(document.getElementById("decadeSelect").value);
+            const filteredTitles = movieTitles.filter(m => m.release_year >= selectedDecade && m.release_year < selectedDecade + 10);
+
+            document.querySelectorAll("input[name='custom_movie']").forEach(input => {
+                $(input).autocomplete({ 
+                    source: filteredTitles.map(m => `${m.title} (${m.release_year})`)
+                });
+            });
+        }
+
+
+        function applyAutocomplete() {
+            updateSuggestions();  // Call this once to initialize autocomplete when custom mode is selected
+        }
+
+    
+        function toggleCustomFields() {
+            const isCustom = document.getElementById("customGame").checked;
+            const customContainer = document.getElementById("customMovieInputs");
+            customContainer.style.display = isCustom ? "block" : "none";
+            if (isCustom) applyAutocomplete();
+        }
+
+        function updatePlayerInputs() {
+            const num = parseInt(document.getElementById("numPlayers").value, 10);
+            const container = document.getElementById("playerInputs");
+            container.innerHTML = "";
+            for (let i = 0; i < num; i++) {
+                const input = document.createElement("input");
+                input.type = "text";
+                input.name = "player";
+                input.placeholder = `Player ${i + 1} Name`;
+                input.className = "form-control mb-2";
+                input.required = true;
+                container.appendChild(input);
+            }
+        }
+    </script>
+    <style>
+        .divider {
+            border-left: 2px solid #ccc;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="text-center mb-4">🎬 Rotten Tomatoes Game</h1>
+
+        <form method="post">
+            <div class="row">
+                <!-- Left side: Player setup -->
+                <div class="col-md-6">
+                    <h4>👥 Players</h4>
+                    <div class="mb-3">
+                        <label for="numPlayers" class="form-label">Number of players:</label>
+                        <select id="numPlayers" name="numPlayers" class="form-select" onchange="updatePlayerInputs()" required>
+                            <option value="" disabled selected>Select...</option>
+                            {% for i in range(1, 11) %}
+                                <option value="{{ i }}">{{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div id="playerInputs"></div>
+                </div>
+
+                <!-- Divider -->
+                <div class="col-md-1 d-none d-md-flex justify-content-center">
+                    <div class="divider"></div>
+                </div>
+
+                <!-- Right side: Game type -->
+                <div class="col-md-5">
+                    <h4>🎮 Game Mode</h4>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="gameType" id="randomGame" value="random" checked onclick="toggleCustomFields()">
+                        <label class="form-check-label" for="randomGame">Random Game</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="gameType" id="customGame" value="custom" onclick="toggleCustomFields()">
+                        <label class="form-check-label" for="customGame">Custom Game</label>
+                    </div>
+
+                    <div class="mt-3">
+                        <label for="decadeSelect" class="form-label">Choose a decade:</label>
+                        <select id="decadeSelect" name="decade" class="form-select" onchange="updateSuggestions()" required>
+                            <option value="" disabled selected>Select decade</option>
+                            {% for year in range(1970, 2030, 10) %}
+                                <option value="{{ year }}">{{ year }}s</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div id="customMovieInputs" style="display: none;" class="mt-3">
+                        <label class="form-label">Enter 5 movie titles:</label>
+                        {% for i in range(5) %}
+                            <input type="text" name="custom_movie" class="form-control mb-2" placeholder="Movie {{ i + 1 }}">
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Button -->
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary btn-lg px-4">Start Game</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
